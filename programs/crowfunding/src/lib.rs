@@ -1,10 +1,13 @@
 use anchor_lang::prelude::*;
 
+use anchor_lang::solana_program::entrypoint::ProgramResult;
+
+
+
 declare_id!("99oEGjcb7XLjSApGPLKbR7XczUhuAs7NUJW7qCSLC9w8");
 
 #[program]
 pub mod crowfunding {
-    use anchor_lang::solana_program::entrypoint::ProgramResult;
 
     use super::*;
 
@@ -12,7 +15,7 @@ pub mod crowfunding {
         let campaign = &mut ctx.accounts.campaign;
         campaign.name = name;
         campaign.description = description;
-        campaign.account_donated = 0;
+        campaign.amount_donated = 0;
         campaign.admin = *ctx.accounts.user.key;
         Ok(())
     }
@@ -38,6 +41,23 @@ pub mod crowfunding {
         Ok(())
     }
  
+    pub fn donate(ctx: Context<Donate>, amount: u64) -> ProgramResult{
+        let ix = anchor_lang::solana_program::system_instruction::transfer(
+            &ctx.accounts.user.key(),
+            &ctx.accounts.campaign.key(),
+            amount
+        );
+
+        let _ = anchor_lang::solana_program::program::invoke(
+            &ix, 
+            &[
+                ctx.accounts.user.to_account_info(),
+                ctx.accounts.campaign.to_account_info()
+            ]
+        );
+        (&mut ctx.accounts.campaign).amount_donated += amount;
+        Ok(())
+    }
   
     // pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
     //     msg!("Greetings from: {:?}", ctx.program_id);
@@ -70,11 +90,24 @@ pub struct Withdraw<'info> {
 }
 
 
+#[derive(Accounts)]
+pub struct Donate<'info> {
+    #[account(mut)]
+    pub campaign: Account<'info, Campaign>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    pub system_program: Program<'info, System>
+
+}
+
+
 
 #[account]
 pub struct Campaign {
     pub admin: Pubkey,
     pub name: String,
     pub description: String,
-    pub account_donated: u64
+    pub amount_donated: u64
 }
