@@ -4,9 +4,11 @@ declare_id!("99oEGjcb7XLjSApGPLKbR7XczUhuAs7NUJW7qCSLC9w8");
 
 #[program]
 pub mod crowfunding {
+    use anchor_lang::solana_program::entrypoint::ProgramResult;
+
     use super::*;
 
-    pub fn create(ctx: Context<Create>, name: String, description: String) -> Result<()> {
+    pub fn create(ctx: Context<Create>, name: String, description: String) -> ProgramResult {
         let campaign = &mut ctx.accounts.campaign;
         campaign.name = name;
         campaign.description = description;
@@ -15,6 +17,27 @@ pub mod crowfunding {
         Ok(())
     }
 
+
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> ProgramResult{
+        let campaign = &ctx.accounts.campaign;
+        let user = &mut ctx.accounts.user;
+
+        if campaign.admin != *user.key {
+            return Err(ProgramError::IncorrectProgramId);
+        }
+
+        let rent_balance = Rent::get()?.minimum_balance(campaign.to_account_info().data_len());
+        if **campaign.to_account_info().lamports.borrow() < amount {
+            return Err(ProgramError::InsufficientFunds);
+        }
+
+        **campaign.to_account_info().try_borrow_mut_lamports()? -= amount;
+        **user.to_account_info().try_borrow_mut_lamports()? += amount;
+        
+
+        Ok(())
+    }
+ 
   
     // pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
     //     msg!("Greetings from: {:?}", ctx.program_id);
@@ -36,6 +59,16 @@ pub struct Create<'info> {
 
     pub system_program: Program<'info, System>
 }
+
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    #[account(mut)]
+    pub campaign: Account<'info, Campaign>,
+
+    #[account(mut)]
+    pub user: Signer<'info>
+}
+
 
 
 #[account]
