@@ -8,7 +8,19 @@ import {
   web3,
   utils,
   BN,
+  getProvider,
 } from "@project-serum/anchor";
+import { clusterApiUrl, PublicKey } from '@solana/web3.js';
+
+const programID = new PublicKey(idl.address);
+const network = clusterApiUrl("devnet");
+const opts = {
+  preflightCommitment: "processed",
+};
+
+const { SystemProgram } = web3
+
+
 
 const App = () => {
 
@@ -38,7 +50,7 @@ const App = () => {
   };
 
   const connectWallet = async () => {
-    const {solana} = window;
+    const { solana } = window;
     if (solana) {
       const response = await solana.connect();
       console.log("Connectes with  public key", response.publicKey.toString());
@@ -46,8 +58,38 @@ const App = () => {
     }
   };
 
+  const createCampaign = async () => {
+    try {
+      const provider = getProvider();
+      const program = new Program(idl, programID, provider);
+      const [campaign] = await PublicKey.findProgramAddressSync(
+        [
+          utils.bytes.utf8.encode("CAMPAIGN_DEMO"),
+          provider.wallet.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+      await program.rpc.create('campaign name', 'campaign description', {
+        accounts: {
+          campaign,
+          user: provider.wallet.publicKey,
+          SystemProgram: SystemProgram.programId
+        }
+      });
+      console.log(
+        "Created a new campaign account", campaign.toString()
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   const renderNotConnectedContainer = () => {
     return <button onClick={connectWallet}> Connect to Wallet </button>
+  }
+
+  const renderConnectedContainer = () => {
+    return <button onClick={createCampaign}> Create a campaign  </button>
   }
 
   useEffect(() => {
@@ -61,9 +103,10 @@ const App = () => {
   }, []);
 
   return (
-  <div className="App"> 
-  {!walletAddress && renderNotConnectedContainer()}
-  </div>
+    <div className="App">
+      {!walletAddress && renderNotConnectedContainer()}
+      {walletAddress && renderConnectedContainer()}
+    </div>
   )
 };
 
