@@ -1,6 +1,14 @@
 //import logo from './logo.svg';
 import { useEffect, useState } from 'react';
 import './App.css';
+import idl from "./idl.json"
+import {
+  Program,
+  AnchorProvider,
+  web3,
+  utils,
+  BN,
+} from "@project-serum/anchor";
 
 const App = () => {
 
