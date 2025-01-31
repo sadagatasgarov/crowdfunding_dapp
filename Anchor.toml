@@ -5,10 +5,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-crowfunding = "3NJSWfTkaAULwdG7AniHTHwKmAB1nVEsuaRbzMCB9DDt"
+crowfunding = "6AXLVbwLRYDPfHuAwDHHGL2Rjdbvm4okgRrXN47TbDZc"
 
 [registry]
-url = "https://api.apr.dev"
+url = "https://api.devnet.solana.com"
 
 [provider]
 cluster = "devnet"
